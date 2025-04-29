@@ -1,57 +1,32 @@
 # golang-fpe
-This is the translated version of [mysto/python-fpe](https://github.com/mysto/python-fpe).
+
+[EN](./README_EN.md)
+
+* 参考 [mysto/python-fpe](https://github.com/mysto/python-fpe) 实现
+* 算法的中文解释：[保形加密](https://knowuv.com/blog/fpe_encryption?utm_source=github&utm_medium=readme&utm_campaign=sl&utm_id=1)
+* 数学基础：[有限域](https://knowuv.com/blog/galois_field?utm_source=github&utm_medium=readme&utm_campaign=sl&utm_id=1)
+* 应用：[短链系统](https://knowuv.com/blog/short-link?utm_source=github&utm_medium=readme&utm_campaign=sl&utm_id=1)
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-# FF3 - Format Preserving Encryption in Python
+# FF3 - Golang 中的格式保留加密
 
-An implementation of the NIST approved FF3 and FF3-1 Format Preserving Encryption (FPE) algorithms in Python.
+这是NIST批准的FF3和FF3-1格式保留加密（FPE）算法的实现。
 
-This package implements the FF3 algorithm for Format Preserving Encryption as described in the March 2016 NIST publication 800-38G _Methods for Format-Preserving Encryption_,
-and revised on February 28th, 2019 with a draft update for FF3-1.
+此包实现了NIST在2016年3月发布的800-38G _格式保留加密方法_ 中描述的FF3算法，并在2019年2月28日修订为FF3-1的草案更新。
 
-* [NIST Recommendation SP 800-38G (FF3)](http://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38G.pdf)
-* [NIST Recommendation SP 800-38G Revision 1 (FF3-1)](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38Gr1-draft.pdf)
+* [NIST 推荐 SP 800-38G (FF3)](http://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38G.pdf)
+* [NIST 推荐 SP 800-38G 修订版 1 (FF3-1)](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38Gr1-draft.pdf)
 
-Changes to minimum domain size and revised tweak length have been implemented in this package with
-support for both 64-bit and 56-bit tweaks. NIST has only published official test vectors for 64-bit tweaks,
-but draft ACVP test vectors have been used for testing FF3-1. It is expected the final
-NIST standard will provide updated test vectors with 56-bit tweak lengths.
+此包实现了对最小域大小的更改和修订的tweak长度，支持64位和56位tweak。NIST仅发布了64位tweak的官方测试向量，但使用了草案ACVP测试向量来测试FF3-1。预计最终的NIST标准将提供56位tweak长度的更新测试向量。
 
-## Installation
+## 安装
 
 `go get github.com/dusty-cjh/golang-fpe`
 
-## Usage
+## 代码示例
 
-FF3 is a Feistel cipher, and Feistel ciphers are initialized with a radix representing an alphabet. The number of
-characters in an alphabet is called the _radix_.
-The following radix values are typical:
-
-* radix 10: digits 0..9
-* radix 36: alphanumeric 0..9, a-z
-* radix 62: alphanumeric 0..9, a-z, A-Z
-
-Special characters and international character sets, such as those found in UTF-8, are supported by specifying a custom alphabet.
-Also, all elements in a plaintext string share the same radix. Thus, an identification number that consists of an initial letter followed
-by 6 digits (e.g. A123456) cannot be correctly encrypted by FPE while preserving this convention.
-
-Input plaintext has maximum length restrictions based upon the chosen radix (2 * floor(96/log2(radix))):
-
-* radix 10: 56
-* radix 36: 36
-* radix 62: 32
-
-To work around string length, its possible to encode longer text in chunks.
-
-The key length must be 128, 192, or 256 bits in length. The tweak is 7 bytes (FF3-1) or 8 bytes for the origingal FF3.
-
-As with any cryptographic package, managing and protecting the key(s) is crucial. The tweak is generally not kept secret.
-This package does not store the key in memory after initializing the cipher.
-
-## Code Example
-
-The example code below uses the default domain [0-9] and can help you get started.
+以下示例代码使用 **base62** 编码，即 **[0-9A-Za-z]**，可以帮助您快速入门。
 
 ```golang
 package main
@@ -65,45 +40,63 @@ import (
 func main() {
 	key := "2DE79D232DF5585D68CE47882AE256D6"
 	tweak := "CBD09280979564"
-	cipher, err := ff3.NewFF3Cipher(key, tweak, 10)
+	cipher, err := ff3.NewFF3Cipher(key, tweak, 62)
 	if err != nil {
-		log.Fatalf("Failed to create FF3 cipher: %v", err)
+		log.Fatalf("创建FF3密码失败: %v", err)
 	}
 
-	plaintext := "20241101"
+	plaintext := "Hello2025"
 	ciphertext, err := cipher.Encrypt(plaintext)
 	if err != nil {
-		log.Fatalf("Failed to encrypt plaintext: %v", err)
+		log.Fatalf("加密明文失败: %v", err)
 	}
 	decrypted, err := cipher.Decrypt(ciphertext)
 	if err != nil {
-		log.Fatalf("Failed to decrypt ciphertext: %v", err)
+		log.Fatalf("解密密文失败: %v", err)
 	}
 
 	fmt.Printf("%s -> %s -> %s\n", plaintext, ciphertext, decrypted)
 }
 ```
 
-## Custom alphabets
+## 使用
 
-Custom alphabets up to 256 characters are supported. To use an alphabet consisting of the uppercase letters A-F (radix=6), we can continue
-from the above code example with:
+FF3是一种Feistel密码，Feistel密码通过一个表示字母表的基数（radix）进行初始化。字母表中的字符数量称为_radix_。
+以下是常见的基数值：
 
-Use these environment variables:
+* 基数10：数字0..9
+* 基数36：字母数字0..9, a-z
+* 基数62：字母数字0..9, a-z, A-Z
+
+通过指定自定义字母表，可以支持特殊字符和国际字符集（如UTF-8）。此外，明文字符串中的所有元素共享相同的基数。因此，像A123456这样的标识号（由一个初始字母和6个数字组成）无法通过FPE正确加密并保留这种约定。
+
+输入明文的最大长度受所选基数的限制（2 * floor(96/log2(radix)）：
+
+* 基数10：56
+* 基数36：36
+* 基数62：32
+
+为了解决字符串长度问题，可以将较长的文本分块编码。
+
+密钥长度必须为128、192或256位。tweak为7字节（FF3-1）或8字节（原始FF3）。
+
+与任何加密包一样，管理和保护密钥至关重要。tweak通常不需要保密。此包在初始化密码后不会将密钥存储在内存中。
+
+## 自定义字母表
+
+支持最多256个字符的自定义字母表。要使用由大写字母A-F组成的字母表（基数=6），可以从上述代码示例继续：
+
+使用以下环境变量：
 
 * `FF3_CIPHER_KEY`
 * `FF3_CIPHER_TWEAK`
 * `FF3_CIPHER_ALPHABET`
 
-## Requires
+## 要求
 
-This project was built and tested with Golang1.22.3 and later versions.
+此项目使用Golang1.22.3及更高版本进行构建和测试。
 
-## The FF3 Algorithm
+## FF3算法
+## 许可证
 
-* [保形加密 - 中文解释](https://knowuv.com/en/blog/math/fpe_encryption)
-* [Galois Field - basis of FPE](https://knowuv.com/en/blog/math/galois_field)
-
-## License
-
-This project is licensed under the terms of the [Apache 2.0 license](https://www.apache.org/licenses/LICENSE-2.0).
+此项目根据 [Apache 2.0许可证](https://www.apache.org/licenses/LICENSE-2.0) 授权。
