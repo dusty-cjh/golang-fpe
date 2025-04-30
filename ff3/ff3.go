@@ -292,7 +292,6 @@ func (c *FF3Cipher) decryptWithTweak(ciphertext, tweak string) (string, error) {
 
 func FF3EncryptInt(c *FF3Cipher, val int64, length int) (string, error) {
 	plaintext := encodeBigInt(big.NewInt(val), c.alphabet, length)
-	fmt.Println("94035rgtjyuh", plaintext)
 	return c.Encrypt(plaintext)
 }
 
